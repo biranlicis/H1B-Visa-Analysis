@@ -1,0 +1,303 @@
+/*website: https://www.foreignlaborcert.doleta.gov/performancedata.cfm */
+
+/*http://jaredsun26.github.io/H1B-Data-Analysis/*/
+
+/*upload the file to the server*/
+scp -r /Users/biranli/Desktop/H1B2015.csv bli36@13.84.155.82:/home/bli36
+
+/*USE HIVE*/
+
+/*create table with hive command*/
+DROP TABLE IF EXISTS H1B2015;
+CREATE external TABLE H1B2015 (
+case_no STRING,
+case_status STRING,
+case_submitted DATE,
+decision_DATE DATE,
+visa_class STRING,
+emstart_DATE DATE,
+emend_DATE DATE,
+employer_name STRING,
+employer_address1 STRING,
+employer_address2 STRING,
+employer_city STRING,
+employer_state STRING,
+employer_postcode INT,
+employer_country STRING,
+employer_province STRING,
+employer_phone INT,
+employer_phoneext INT,
+agent_name STRING,
+agent_city STRING,
+agent_state STRING,
+job_title STRING,
+soc_code STRING,
+soc_name STRING,
+naic_code INT,
+total_worker INT,
+fulltime STRING,
+wage STRING,
+pw_unitofpay STRING,
+pw_source STRING,
+pw_sourceyear STRING,
+pw_sourceother STRING,
+wage_from INT,
+wage_to INT,
+wage_unitofpay STRING,
+H1B_dependent STRING,
+willful_violator STRING,
+worksitecity STRING,
+worksitecounty STRING,
+worksitestate STRING,
+worksitepostalcode INT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1B2015';
+
+hdfs dfs -put H1B2015.csv /dataset/H1B2015
+
+/*clean data*/
+DROP TABLE IF EXISTS H1B2015a;
+CREATE TABLE IF NOT EXISTS H1B2015a
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1B2015a'
+AS SELECT employer_state, employer_name, soc_name, worksitestate, wage, wage_unitofpay
+FROM H1B2015;
+
+/*count worksite state*/
+DROP TABLE IF EXISTS H1Bworksitestate2015;
+CREATE TABLE IF NOT EXISTS H1Bworksitestate2015
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1Bworksitestate2015'
+AS SELECT worksitestate, count(worksitestate) AS numbers 
+FROM H1B2015a
+GROUP BY worksitestate
+ORDER BY numbers DESC;
+
+*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1Bworksitestate2015/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+/*count employer state*/
+DROP TABLE IF EXISTS H1Bemploystate2015;
+CREATE TABLE IF NOT EXISTS H1Bemploystate2015
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1BSTATE2015'
+AS SELECT employer_state, count(employer_state) AS numbers 
+FROM H1B2015a
+GROUP BY employer_state
+ORDER BY numbers DESC;
+
+/*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1Bemploystate2015/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+
+/*create a table, count employer names*/
+DROP TABLE IF EXISTS H1Bemployercount2015;
+CREATE TABLE IF NOT EXISTS H1Bemployercount2015
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1Bemployercount2015'
+AS SELECT employer_name, count(employer_name) AS numbers 
+FROM H1B2015a
+GROUP BY employer_name
+ORDER BY numbers DESC LIMIT 30;
+
+/*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1Bemployercount2015/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+
+/*income&company*/
+DROP TABLE IF EXISTS H1Bemployerincome2015;
+CREATE TABLE IF NOT EXISTS H1Bemployerincome2015
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1Bemployerincome2015'
+AS SELECT employer_name, MAX(wage) AS maxwage  
+FROM H1B2015a
+GROUP BY employer_name
+ORDER BY maxwage DESC LIMIT 20;
+
+
+hdfs dfs -get /dataset/H1Bemployerincome2015/000000_0 /home/bli36/download
+
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+
+/*20 most popular majors*/
+DROP TABLE IF EXISTS H1Bmajor2015;
+CREATE TABLE IF NOT EXISTS H1Bmajor2015
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1Bmajor2015'
+AS SELECT soc_name, count(soc_name) AS majors
+FROM H1B2015a
+GROUP BY soc_name
+ORDER BY majors DESC LIMIT 20;
+
+hdfs dfs -get /dataset/H1Bmajor2015/000000_0 /home/bli36/download
+
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+
+
+/*Hive 2014*/
+scp -r /Users/biranli/Desktop/H1B2014.csv bli36@13.84.155.82:/home/bli36
+
+DROP TABLE IF EXISTS H1B2014;
+CREATE external TABLE H1B2014(
+case_no STRING,
+case_status STRING,
+case_submitted DATE,
+decision_DATE DATE,
+visa_class STRING,
+emstart_DATE DATE,
+emend_DATE DATE,
+employer_name STRING,
+employer_address1 STRING,
+employer_city STRING,
+employer_state STRING,
+employer_postcode INT,
+soc_code STRING,
+soc_name STRING,
+job_title STRING,
+wagerate_from INT,
+wagerate_to INT,
+wage_unit STRING,
+full_time STRING,
+total_worker INT,
+worksitecity STRING,
+worksitestate STRING,
+pw INT,
+pw_unit STRING,
+pw_source1 STRING,
+otherwage_source STRING,
+year_source INT)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1B2014';
+
+hdfs dfs -put H1B2014.csv /dataset/H1B2014
+
+/*COUNT WORKSITE STATE*/
+DROP TABLE IF EXISTS H1BWORKSTATE2014;
+CREATE TABLE IF NOT EXISTS H1BWORKSTATE2014
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1BWORKSTATE2014'
+AS SELECT worksitestate, COUNT(worksitestate) AS numbers
+FROM H1B2014
+GROUP BY worksitestate
+ORDER BY numbers DESC;
+
+/*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1BWORKSTATE2014/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+
+/*COUNT EMPLOYER STATE*/
+DROP TABLE IF EXISTS H1BEMPLOYSTATE2014;
+CREATE TABLE IF NOT EXISTS H1BEMPLOYSTATE2014
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1BEMPLOYSTATE2014'
+AS SELECT employer_state, COUNT(employer_state) AS numbers
+FROM H1B2014
+GROUP BY employer_state
+ORDER BY numbers DESC;
+
+/*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1BEMPLOYSTATE2014/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+/*create a table, count employer names*/
+DROP TABLE IF EXISTS H1B2014EMPLOYCOUNT;
+CREATE TABLE IF NOT EXISTS H1B2014EMPLOYCOUNT
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1B2014EMPLOYCOUNT'
+AS SELECT employer_name, COUNT(employer_name) AS numbers 
+FROM H1B2014
+GROUP BY employer_name
+ORDER BY numbers DESC LIMIT 30;
+
+/*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1B2014EMPLOYCOUNT/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+/*state with high wage*/
+DROP TABLE IF EXISTS H1B2014employerincome;
+CREATE TABLE IF NOT EXISTS H1B2014employerincome
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1B2014employerincome'
+AS SELECT worksitestate, AVG(wagerate_from)  AS wage
+FROM H1B2014
+WHERE wage_unit = 'Year'
+GROUP BY worksitestate
+ORDER BY wage DESC;
+
+*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1B2014employerincome/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+/*20 most popular majors*/
+DROP TABLE IF EXISTS H1B2014major;
+CREATE TABLE IF NOT EXISTS H1B2014major
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1B2014major'
+AS SELECT soc_name, count(soc_name) AS majors
+FROM H1B2014
+GROUP BY soc_name
+ORDER BY majors DESC
+LIMIT 20;
+
+*download file from hdfs to server*/
+hdfs dfs -get /dataset/H1B2014major/000000_0 /home/bli36/download
+
+/*download file from server to local*/
+scp bli36@13.84.155.82:/home/bli36/download/000000_0 /Users/biranli/Desktop
+
+/*Join table state201415*/
+DROP TABLE IF EXISTS H1BSTATE201415;
+CREATE TABLE IF NOT EXISTS H1BSTATE201415
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION '/dataset/H1BSTATE201415'
+AS SELECT worksitestate2014, numbers2014, numbers FROM 
+H1BWORKSTATE2014 JOIN H1Bworksitestate2015
+ON ( H1BWORKSTATE2014.worksitestate2014 = H1Bworksitestate2015.worksitestate);
